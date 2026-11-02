@@ -1,0 +1,25 @@
+{
+  "rules": {
+    "rooms": {
+      "$code": {
+        ".read": "auth != null && $code.matches(/^[0-9]{5}$/)",
+        ".write": "auth != null && $code.matches(/^[0-9]{5}$/) && ((!data.exists() && newData.exists() && newData.child('owner').val() === auth.uid && newData.child('name').isString() && newData.child('name').val().length <= 70 && newData.child('chatEnabled').val() === true) || (data.exists() && data.child('owner').val() === auth.uid))",
+        "students": {
+          "$uid": {
+            ".write": "auth != null && auth.uid === $uid && data.parent().parent().exists() && newData.exists() && newData.child('name').isString() && newData.child('name').val().length > 0 && newData.child('name').val().length <= 50",
+            ".validate": "newData.hasChildren(['name'])"
+          }
+        },
+        "messages": {
+          "$messageId": {
+            ".write": "auth != null && !data.exists() && newData.exists() && newData.child('uid').val() === auth.uid && (root.child('rooms').child($code).child('owner').val() === auth.uid || (root.child('rooms').child($code).child('students').child(auth.uid).exists() && root.child('rooms').child($code).child('chatEnabled').val() === true))",
+            ".validate": "newData.hasChildren(['uid','text','createdAt']) && newData.child('text').isString() && newData.child('text').val().length > 0 && newData.child('text').val().length <= 500 && newData.child('createdAt').isNumber()"
+          }
+        },
+        "chatEnabled": {
+          ".validate": "newData.isBoolean()"
+        }
+      }
+    }
+  }
+}
