@@ -1,0 +1,115 @@
+{
+  "rules": {
+    "rooms": {
+      "$code": {
+        ".read": "auth != null && $code.matches(/^[0-9]{5}$/)",
+        ".write": "auth != null && $code.matches(/^[0-9]{5}$/) && ((!data.exists() && newData.exists() && newData.child('owner').val() === auth.uid && newData.child('name').isString() && newData.child('name').val().length <= 70 && newData.child('chatEnabled').val() === true) || (data.exists() && data.child('owner').val() === auth.uid))",
+        "students": {
+          "$uid": {
+            ".write": "auth != null && auth.uid === $uid && data.parent().parent().exists() && newData.exists() && newData.child('name').isString() && newData.child('name').val().length > 0 && newData.child('name').val().length <= 50",
+            ".validate": "newData.hasChildren(['name'])"
+          }
+        },
+        "messages": {
+          "$messageId": {
+            ".write": "auth != null && !data.exists() && newData.exists() && newData.child('uid').val() === auth.uid && (root.child('rooms').child($code).child('owner').val() === auth.uid || (root.child('rooms').child($code).child('students').child(auth.uid).exists() && root.child('rooms').child($code).child('chatEnabled').val() === true))",
+            ".validate": "newData.hasChildren(['uid','text','createdAt']) && newData.child('text').isString() && newData.child('text').val().length > 0 && newData.child('text').val().length <= 500 && newData.child('createdAt').isNumber()"
+          }
+        },
+        "chatEnabled": {
+          ".validate": "newData.isBoolean()"
+        }
+      }
+    },
+    "users": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid && auth.token.firebase.sign_in_provider !== 'anonymous'",
+        ".write": "auth != null && auth.uid === $uid && auth.token.firebase.sign_in_provider !== 'anonymous'",
+        "profile": {
+          ".validate": "newData.hasChildren(['name','role']) && newData.child('name').isString() && newData.child('name').val().length <= 60 && (newData.child('role').val() === 'student' || newData.child('role').val() === 'teacher')"
+        },
+        "progress": {
+          ".validate": "newData.isString() && newData.val().length <= 100000"
+        },
+        "$other": {
+          ".validate": "false"
+        },
+        "classes": {
+          "$cid": {
+            ".validate": "newData.isBoolean()"
+          }
+        }
+      }
+    },
+    "classCodes": {
+      "$code": {
+        ".read": "auth != null && auth.token.firebase.sign_in_provider !== 'anonymous'",
+        ".write": "auth != null && auth.token.firebase.sign_in_provider !== 'anonymous' && !data.exists() && root.child('users/'+auth.uid+'/profile/role').val() === 'teacher'",
+        ".validate": "newData.isString() && newData.val().length <= 40"
+      }
+    },
+    "classes": {
+      "$cid": {
+        ".write": "auth != null && auth.token.firebase.sign_in_provider !== 'anonymous' && ((!data.exists() && newData.child('owner').val() === auth.uid && root.child('users/'+auth.uid+'/profile/role').val() === 'teacher') || data.child('owner').val() === auth.uid)",
+        "name": {
+          ".read": "auth != null && auth.token.firebase.sign_in_provider !== 'anonymous' && (root.child('classes/'+$cid+'/owner').val() === auth.uid || root.child('classes/'+$cid+'/members/'+auth.uid).exists())",
+          ".validate": "newData.isString() && newData.val().length >= 2 && newData.val().length <= 60"
+        },
+        "owner": {
+          ".validate": "newData.isString()"
+        },
+        "code": {
+          ".read": "auth != null && auth.token.firebase.sign_in_provider !== 'anonymous' && (root.child('classes/'+$cid+'/owner').val() === auth.uid)",
+          ".validate": "newData.isString() && newData.val().length === 6"
+        },
+        "members": {
+          ".read": "auth != null && auth.token.firebase.sign_in_provider !== 'anonymous' && (root.child('classes/'+$cid+'/owner').val() === auth.uid)",
+          "$uid": {
+            ".write": "auth != null && auth.token.firebase.sign_in_provider !== 'anonymous' && root.child('classes/'+$cid+'/owner').exists() && ($uid === auth.uid || root.child('classes/'+$cid+'/owner').val() === auth.uid)",
+            ".validate": "newData.hasChildren(['name']) && newData.child('name').isString() && newData.child('name').val().length <= 60"
+          }
+        }
+      }
+    },
+    "homework": {
+      "$cid": {
+        ".read": "auth != null && auth.token.firebase.sign_in_provider !== 'anonymous' && (root.child('classes/'+$cid+'/owner').val() === auth.uid || root.child('classes/'+$cid+'/members/'+auth.uid).exists())",
+        "$hid": {
+          ".write": "auth != null && auth.token.firebase.sign_in_provider !== 'anonymous' && root.child('classes/'+$cid+'/owner').val() === auth.uid",
+          ".validate": "newData.hasChildren(['title']) && newData.child('title').isString() && newData.child('title').val().length <= 120",
+          "text": {
+            ".validate": "newData.isString() && newData.val().length <= 2000"
+          },
+          "due": {
+            ".validate": "newData.isString() && newData.val().length <= 10"
+          },
+          "title": {
+            ".validate": "true"
+          }
+        }
+      }
+    },
+    "submissions": {
+      "$cid": {
+        ".read": "auth != null && auth.token.firebase.sign_in_provider !== 'anonymous' && (root.child('classes/'+$cid+'/owner').val() === auth.uid)",
+        "$hid": {
+          ".write": "auth != null && auth.token.firebase.sign_in_provider !== 'anonymous' && root.child('classes/'+$cid+'/owner').val() === auth.uid",
+          "$uid": {
+            ".read": "auth != null && auth.token.firebase.sign_in_provider !== 'anonymous' && auth.uid === $uid",
+            ".write": "auth != null && auth.token.firebase.sign_in_provider !== 'anonymous' && auth.uid === $uid && root.child('classes/'+$cid+'/members/'+auth.uid).exists() && root.child('homework/'+$cid+'/'+$hid).exists()",
+            ".validate": "newData.hasChildren(['text','at','name'])",
+            "text": {
+              ".validate": "newData.isString() && newData.val().length <= 2000"
+            },
+            "name": {
+              ".validate": "newData.isString() && newData.val().length <= 60"
+            },
+            "at": {
+              ".validate": "newData.isNumber()"
+            }
+          }
+        }
+      }
+    }
+  }
+}
