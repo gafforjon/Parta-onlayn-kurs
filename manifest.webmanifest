@@ -1,0 +1,18 @@
+{
+  "id": "./index.html",
+  "name": "PARTA — Онлайн школа",
+  "short_name": "PARTA",
+  "description": "Онлайн-школа для школьников Узбекистана: уроки, тесты, комнаты, помощник.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#171b38",
+  "theme_color": "#3b5bff",
+  "lang": "ru",
+  "categories": ["education"],
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
